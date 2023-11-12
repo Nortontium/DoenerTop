@@ -16,8 +16,24 @@ class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: ResponsiveText(
+            text: "loading...",
+            style: const TextStyle(
+              fontFamily: "DelaGothicOne",
+              color: Colors.black,
+              fontSize: 20,
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       body: Center(
         child: Padding(
@@ -67,6 +83,9 @@ class _LoginState extends State<Login> {
                   String password = _passwordController.text.trim();
 
                   try {
+                    setState(() {
+                      isLoading = true;
+                    });
                     await _auth.signInWithEmailAndPassword(
                       email: email,
                       password: password,
@@ -76,6 +95,9 @@ class _LoginState extends State<Login> {
                         .authStateChanges()
                         .listen((User? user) {
                       if (user != null) {
+                        setState(() {
+                          isLoading = false;
+                        });
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -96,6 +118,9 @@ class _LoginState extends State<Login> {
                     });
                     // User successfully logged in
                   } catch (e) {
+                    setState(() {
+                      isLoading = false;
+                    });
                     // Handle login errors
                   }
                 },

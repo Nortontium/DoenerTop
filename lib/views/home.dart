@@ -1,4 +1,5 @@
 import 'package:doenertop/components/responsive_text.dart';
+import 'package:doenertop/views/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/doenershop.dart';
@@ -36,7 +37,7 @@ class _HomeState extends State<Home> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const Navigation(),
+        builder: (context) => const Profile(),
       ),
     );
   }
