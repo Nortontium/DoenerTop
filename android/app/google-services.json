@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "907776986667",
+    "project_id": "doenertop",
+    "storage_bucket": "doenertop.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907776986667:android:24ec092aa750e016e7646e",
+        "android_client_info": {
+          "package_name": "com.carlczarnetzki.doenertop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0iGLv5_w7_Qf1he3hbrMym98k3LSHuZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907776986667:android:f6552c0c9cc40583e7646e",
+        "android_client_info": {
+          "package_name": "com.carlczarnetzki.doenertop_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0iGLv5_w7_Qf1he3hbrMym98k3LSHuZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
