@@ -1,8 +1,7 @@
-import 'package:doenertop/views/login.dart';
+import 'package:doenertop/components/firebase.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,8 +11,14 @@ void main() async {
   runApp(const DoenerTop());
 }
 
-class DoenerTop extends StatelessWidget {
+class DoenerTop extends StatefulWidget {
   const DoenerTop({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _DoenerTopState();
+}
+
+class _DoenerTopState extends State<DoenerTop> {
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,7 @@ class DoenerTop extends StatelessWidget {
         useMaterial3: true,
         fontFamily: "DelaGothicOne",
       ),
-      home: const Login(),
+      home: const CheckLogin(),
       debugShowCheckedModeBanner: false,
     );
   }

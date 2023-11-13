@@ -5,8 +5,6 @@ import 'home.dart';
 
 import 'package:flutter/material.dart';
 
-import 'login.dart';
-
 class Navigation extends StatefulWidget {
   const Navigation({super.key});
 
@@ -49,11 +47,6 @@ class _NavigationState extends State<Navigation> {
     );
   }
 
-  void _logout() async {
-    await FirebaseAuth.instance.signOut();
-    //logged out and returning to login
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +62,7 @@ class _NavigationState extends State<Navigation> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 100),
+            const SizedBox(height: 150),
             TextButton(
               onPressed: _pushHome,
               child: const Text(
@@ -96,17 +89,6 @@ class _NavigationState extends State<Navigation> {
               onPressed: _pushSettings,
               child: const Text(
                 "Settings",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 28,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-            TextButton(
-              onPressed: _logout,
-              child: const Text(
-                "Logout",
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 28,

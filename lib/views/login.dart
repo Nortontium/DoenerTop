@@ -19,6 +19,10 @@ class _LoginState extends State<Login> {
   bool isLoading = false;
 
   @override
+  void initState() {
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
@@ -94,7 +98,7 @@ class _LoginState extends State<Login> {
                     FirebaseAuth.instance
                         .authStateChanges()
                         .listen((User? user) {
-                      if (user != null) {
+                      if (user != null) { //zu user homepage weiterleiten
                         setState(() {
                           isLoading = false;
                         });
@@ -106,7 +110,10 @@ class _LoginState extends State<Login> {
                           ),
                         );
                       }
-                      if (user == null) {
+                      if (user == null) { //kein user angemeldet
+                        setState(() {
+                          isLoading = false;
+                        });
                         Navigator.push(
                           context,
                           MaterialPageRoute(

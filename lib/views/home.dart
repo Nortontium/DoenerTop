@@ -95,7 +95,7 @@ class _HomeState extends State<Home> {
               height: 30,
             ),
             const Padding(
-              padding: EdgeInsets.all(10),
+              padding: EdgeInsets.all(16),
               child: Text(
                 "Trending",
                 style: TextStyle(
@@ -150,8 +150,10 @@ class _HomeState extends State<Home> {
                                   shops[index].name,
                                   overflow: TextOverflow.clip,
                                   style: const TextStyle(
-                                    color: Colors.greenAccent,
+                                    color: Colors.white,
                                     fontSize: 22,
+                                    fontFamily: "Roboto",
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
@@ -160,6 +162,7 @@ class _HomeState extends State<Home> {
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
+                                    fontFamily: "Roboto",
                                   ),
                                 ),
                               ],

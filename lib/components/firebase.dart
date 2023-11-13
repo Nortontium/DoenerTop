@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doenertop/components/responsive_text.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../views/home.dart';
+import '../views/login.dart';
 
 class GetUserName extends StatelessWidget {
   final String documentId;
@@ -8,6 +13,11 @@ class GetUserName extends StatelessWidget {
     this.documentId, {
     super.key,
   });
+
+  void _logout() async {
+    await FirebaseAuth.instance.signOut();
+    //user logged out and returning to login page
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +38,90 @@ class GetUserName extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.done) {
           Map<String, dynamic> data =
               snapshot.data!.data() as Map<String, dynamic>;
-          return Text("${data['name']}");
+          return Center(
+            child: Column(
+              children: [
+                const SizedBox(height: 50),
+                Text(
+                  "You are logged in as\n${data['name']}",
+                  style: const TextStyle(
+                    fontFamily: "Roboto",
+                    fontSize: 26,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 50),
+                ElevatedButton(
+                  onPressed: _logout,
+                  style: const ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(Colors.black),
+                  ),
+                  child: const Text(
+                    "Logout",
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              ],
+            ),
+          );
         }
 
-        return const Text("loading");
+        return Center(
+          child: ResponsiveText(
+            text: "loading...",
+            style: const TextStyle(
+              fontFamily: "DelaGothicOne",
+              color: Colors.black,
+              fontSize: 20,
+            ),
+          ),
+        );
       },
+    );
+  }
+}
+
+class CheckLogin extends StatelessWidget {
+  const CheckLogin({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        //zu user homepage weiterleiten
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const Home(),
+            fullscreenDialog: true,
+          ),
+        );
+      }
+      if (user == null) {
+        //kein user angemeldet
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const Login(),
+            fullscreenDialog: true,
+          ),
+        );
+      }
+    });
+    return Scaffold(
+      body: Center(
+        child: ResponsiveText(
+          text: "loading...",
+          style: const TextStyle(
+            fontFamily: "DelaGothicOne",
+            color: Colors.black,
+            fontSize: 20,
+          ),
+        ),
+      ),
     );
   }
 }
