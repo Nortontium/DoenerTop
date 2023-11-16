@@ -79,15 +79,17 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
+      body: ListView(
+        children:
+        [
+          Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(16),
               child: Text(
                 "Favorites",
@@ -97,19 +99,86 @@ class _HomeState extends State<Home> {
                 ),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 250,
               child: Favourites(),
             ),
-            SizedBox(
+            const SizedBox(
               height: 30,
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Browse",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                ),
+              ),
+            ),
+            const SizedBox(
+              child: Browse(),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: ResponsiveText(
+                textAlign: TextAlign.center,
+                text: "Made with ♥ by Carl Czarnetzki",
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 10,
+                ),
+              ),
             ),
           ],
         ),
+      ]
       ),
     );
   }
 }
+
+class Browse extends StatefulWidget {
+  const Browse({super.key});
+
+  @override
+  State<Browse> createState() => _BrowseState();
+}
+
+class _BrowseState extends State<Browse> {
+  final Stream<QuerySnapshot> _shopsStream =
+  FirebaseFirestore.instance.collection('doenershops').snapshots();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _shopsStream,
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return const Text('Something went wrong');
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Text("Loading");
+        }
+
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: snapshot.data!.docs
+              .map((DocumentSnapshot document) {
+            Map<String, dynamic> data =
+            document.data()! as Map<String, dynamic>;
+            return ShopCard(data: data);
+          })
+              .toList()
+              .cast(),
+        );
+      },
+    );
+  }
+}
+
 
 class Favourites extends StatefulWidget {
   const Favourites({super.key});
@@ -119,11 +188,6 @@ class Favourites extends StatefulWidget {
 
 class _FavouritesState extends State<Favourites> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,70 +222,166 @@ class _FavouritesState extends State<Favourites> {
             itemBuilder: (context, index) {
               Map<String, dynamic> data =
                   snapshot.data!.docs[index].data()! as Map<String, dynamic>;
-              return Container(
-                margin: const EdgeInsets.all(10),
-                height: 200,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Stack(
-                  fit: StackFit.passthrough,
-                  children: [
-                    Image.asset(
-                      data['image'],
-                      fit: BoxFit.cover,
-                      width: 300,
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        height: 150,
-                        width: 300,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.center,
-                            end: Alignment.topCenter,
-                            colors: [
-                              Colors.grey.withOpacity(0.9),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              data['name'],
-                              overflow: TextOverflow.clip,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontFamily: "Roboto",
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              data['address'],
-                              overflow: TextOverflow.clip,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: "Roboto",
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return FavCard(data: data);
             },
           );
         });
+  }
+}
+
+class FavCard extends StatefulWidget {
+  final Map<String, dynamic> data;
+
+  FavCard({super.key, required this.data});
+
+  @override
+  State<FavCard> createState() => _FavCardState();
+}
+
+class _FavCardState extends State<FavCard> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      height: 200,
+      width: MediaQuery.of(context).size.width * 0.80,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Image.asset(
+            widget.data['image'],
+            fit: BoxFit.cover,
+            width: MediaQuery.of(context).size.width * 0.80,
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 150,
+              width: MediaQuery.of(context).size.width * 0.80,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.center,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.grey.withOpacity(0.9),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.data['name'],
+                    overflow: TextOverflow.clip,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontFamily: "Roboto",
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    widget.data['address'],
+                    overflow: TextOverflow.clip,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: "Roboto",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+class ShopCard extends StatefulWidget {
+  final Map<String, dynamic> data;
+  const ShopCard({super.key, required this.data});
+
+  @override
+  State<ShopCard> createState() => _ShopCardState();
+}
+
+class _ShopCardState extends State<ShopCard> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      height: 200,
+      width: MediaQuery.of(context).size.width * 0.95,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Image.asset(
+            widget.data['image'],
+            fit: BoxFit.cover,
+            width: MediaQuery.of(context).size.width * 0.95,
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 150,
+              width: MediaQuery.of(context).size.width * 0.95,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.center,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.grey.withOpacity(0.9),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.data['name'],
+                    overflow: TextOverflow.clip,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontFamily: "Roboto",
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    widget.data['address'],
+                    overflow: TextOverflow.clip,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: "Roboto",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
