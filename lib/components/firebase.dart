@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import '../views/home.dart';
 import '../views/login.dart';
 
-class GetUserName extends StatelessWidget {
+class GetUserInfo extends StatelessWidget {
   final String documentId;
 
-  GetUserName(
+  GetUserInfo(
     this.documentId, {
     super.key,
   });

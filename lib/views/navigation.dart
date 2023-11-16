@@ -1,5 +1,5 @@
 import 'package:doenertop/views/profile.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:doenertop/views/settings.dart';
 
 import 'home.dart';
 
@@ -41,7 +41,7 @@ class _NavigationState extends State<Navigation> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const Home(),
+        builder: (context) => const Settings(),
         fullscreenDialog: true,
       ),
     );
