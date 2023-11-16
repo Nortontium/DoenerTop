@@ -1,7 +1,6 @@
 import 'package:doenertop/components/firebase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import '../components/responsive_text.dart';
 import 'home.dart';
 import 'navigation.dart';
