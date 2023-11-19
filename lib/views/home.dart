@@ -79,10 +79,8 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: ListView(
-        children:
-        [
-          Column(
+      body: ListView(children: [
+        Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -133,8 +131,7 @@ class _HomeState extends State<Home> {
             ),
           ],
         ),
-      ]
-      ),
+      ]),
     );
   }
 }
@@ -148,7 +145,7 @@ class Browse extends StatefulWidget {
 
 class _BrowseState extends State<Browse> {
   final Stream<QuerySnapshot> _shopsStream =
-  FirebaseFirestore.instance.collection('doenershops').snapshots();
+      FirebaseFirestore.instance.collection('doenershops').snapshots();
 
   @override
   Widget build(BuildContext context) {
@@ -160,17 +157,40 @@ class _BrowseState extends State<Browse> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text("Loading");
+          return Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.all(10),
+                height: 200,
+                width: MediaQuery.of(context).size.width * 0.95,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.all(10),
+                height: 200,
+                width: MediaQuery.of(context).size.width * 0.95,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ],
+          );
         }
 
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: snapshot.data!.docs
               .map((DocumentSnapshot document) {
-            Map<String, dynamic> data =
-            document.data()! as Map<String, dynamic>;
-            return ShopCard(data: data);
-          })
+                Map<String, dynamic> data =
+                    document.data()! as Map<String, dynamic>;
+                return ShopCard(data: data);
+              })
               .toList()
               .cast(),
         );
@@ -178,7 +198,6 @@ class _BrowseState extends State<Browse> {
     );
   }
 }
-
 
 class Favourites extends StatefulWidget {
   const Favourites({super.key});
@@ -202,13 +221,23 @@ class _FavouritesState extends State<Favourites> {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Text("Loading");
+            return Container(
+              margin: const EdgeInsets.all(10),
+              height: 200,
+              width: MediaQuery.of(context).size.width * 0.80,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            );
           }
 
           if (!snapshot.hasData) {
             return Container(
               margin: const EdgeInsets.all(10),
               height: 200,
+              width: MediaQuery.of(context).size.width * 0.80,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: Colors.grey.withOpacity(0.4),
@@ -306,8 +335,6 @@ class _FavCardState extends State<FavCard> {
     );
   }
 }
-
-
 
 class ShopCard extends StatefulWidget {
   final Map<String, dynamic> data;
