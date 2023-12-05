@@ -1,6 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:doenertop/components/responsive_text.dart';
+import 'dart:async';
+
 import 'package:doenertop/views/profile.dart';
+import 'package:doenertop/components/responsive_text.dart';
+import 'package:favorite_button/favorite_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -50,6 +53,7 @@ class _HomeState extends State<Home> {
             fontFamily: "DelaGothicOne",
           ),
         ),
+        centerTitle: true,
         leading: GestureDetector(
           onTap: _pushNavigation,
           child: Container(
@@ -116,6 +120,9 @@ class _HomeState extends State<Home> {
             ),
             const SizedBox(
               child: Browse(),
+            ),
+            const SizedBox(
+              child: AddShopButton(),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -187,9 +194,7 @@ class _BrowseState extends State<Browse> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: snapshot.data!.docs
               .map((DocumentSnapshot document) {
-                Map<String, dynamic> data =
-                    document.data()! as Map<String, dynamic>;
-                return ShopCard(data: data);
+                return ShopCard(cardData: document);
               })
               .toList()
               .cast(),
@@ -207,6 +212,16 @@ class Favourites extends StatefulWidget {
 
 class _FavouritesState extends State<Favourites> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    FavoritesController.stream.listen((bool _) {
+      setState(() {
+
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,10 +245,12 @@ class _FavouritesState extends State<Favourites> {
                 color: Colors.grey.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(16),
               ),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
             );
           }
-
-          if (!snapshot.hasData) {
+          if (snapshot.data!.size == 0) {   //TODO: schönes ui
             return Container(
               margin: const EdgeInsets.all(10),
               height: 200,
@@ -243,15 +260,24 @@ class _FavouritesState extends State<Favourites> {
                 color: Colors.grey.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(16),
               ),
+              child: const Center(
+                child: Text(
+                  'Click the heart icon to \nadd to favorites.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Roboto",
+                  fontSize: 18,
+                ),),
+              ),
             );
           }
           return ListView.builder(
             itemCount: snapshot.data!.size,
             scrollDirection: Axis.horizontal,
             itemBuilder: (context, index) {
-              Map<String, dynamic> data =
-                  snapshot.data!.docs[index].data()! as Map<String, dynamic>;
-              return FavCard(data: data);
+              QueryDocumentSnapshot<Object?> cardData =
+                  snapshot.data!.docs[index];
+              return FavCard(cardData: cardData);
             },
           );
         });
@@ -259,15 +285,22 @@ class _FavouritesState extends State<Favourites> {
 }
 
 class FavCard extends StatefulWidget {
-  final Map<String, dynamic> data;
+  final QueryDocumentSnapshot<Object?> cardData;
 
-  FavCard({super.key, required this.data});
+  const FavCard({super.key, required this.cardData});
 
   @override
   State<FavCard> createState() => _FavCardState();
 }
 
 class _FavCardState extends State<FavCard> {
+  late Map<String, dynamic> data;
+
+  @override
+  void initState() {
+    data = widget.cardData.data() as Map<String, dynamic>;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -283,7 +316,7 @@ class _FavCardState extends State<FavCard> {
         fit: StackFit.passthrough,
         children: [
           Image.asset(
-            widget.data['image'],
+            data['image'],
             fit: BoxFit.cover,
             width: MediaQuery.of(context).size.width * 0.80,
           ),
@@ -298,7 +331,7 @@ class _FavCardState extends State<FavCard> {
                   begin: Alignment.center,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.grey.withOpacity(0.9),
+                    Colors.grey[800]!.withOpacity(0.9),
                     Colors.transparent,
                   ],
                 ),
@@ -308,7 +341,7 @@ class _FavCardState extends State<FavCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.data['name'],
+                    data['name'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -318,7 +351,7 @@ class _FavCardState extends State<FavCard> {
                     ),
                   ),
                   Text(
-                    widget.data['address'],
+                    data['address'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -337,16 +370,53 @@ class _FavCardState extends State<FavCard> {
 }
 
 class ShopCard extends StatefulWidget {
-  final Map<String, dynamic> data;
-  const ShopCard({super.key, required this.data});
+  final DocumentSnapshot<Object?> cardData;
+  const ShopCard({super.key, required this.cardData});
 
   @override
   State<ShopCard> createState() => _ShopCardState();
 }
 
 class _ShopCardState extends State<ShopCard> {
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+  bool _fav = false;
+  Map<String, dynamic> data = {};
+
+  @override
+  void initState() {
+    data = widget.cardData.data() as Map<String, dynamic>;
+    if (_auth.currentUser != null &&
+        data['favorites'].contains(_auth.currentUser?.uid)){
+        _fav = true;
+    } else {
+      _fav = false;
+    }
+  }
+
+  void setFavorite(bool isFavorite) async {
+    final docRef = _firestore.collection("doenershops").doc(widget.cardData.id);
+    if (isFavorite) {
+      // Add current user's ID to the favorites array
+      docRef.set({'favorites': FieldValue.arrayUnion([_auth.currentUser?.uid])},
+          SetOptions(merge: true));
+    } else {
+      // Remove current user's ID from the favorites array
+      docRef.update({'favorites': FieldValue.arrayRemove([_auth.currentUser?.uid])});
+    }
+
+    FavoritesController.notifyFavoritesChanged();   //for correct display in favorites widget
+
+    setState(() {
+      _fav = isFavorite;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const Text("Loading..."); //TODO: ui
+    }
     return Container(
       margin: const EdgeInsets.all(10),
       height: 200,
@@ -360,7 +430,7 @@ class _ShopCardState extends State<ShopCard> {
         fit: StackFit.passthrough,
         children: [
           Image.asset(
-            widget.data['image'],
+            data['image'],
             fit: BoxFit.cover,
             width: MediaQuery.of(context).size.width * 0.95,
           ),
@@ -375,7 +445,7 @@ class _ShopCardState extends State<ShopCard> {
                   begin: Alignment.center,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.grey.withOpacity(0.9),
+                    Colors.grey[800]!.withOpacity(0.9),
                     Colors.transparent,
                   ],
                 ),
@@ -385,7 +455,7 @@ class _ShopCardState extends State<ShopCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.data['name'],
+                    data['name'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -395,7 +465,7 @@ class _ShopCardState extends State<ShopCard> {
                     ),
                   ),
                   Text(
-                    widget.data['address'],
+                    data['address'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -407,8 +477,82 @@ class _ShopCardState extends State<ShopCard> {
               ),
             ),
           ),
+          Container(
+            margin: const EdgeInsets.all(10),
+            height: 150,
+            width: MediaQuery.of(context).size.width * 0.95,
+            child: Align(
+              alignment: Alignment.topRight,
+              child: FavoriteButton(
+                isFavorite: _fav,
+                valueChanged: (isFavorite) {
+                  setState(() {
+                    setFavorite(isFavorite);
+                  });
+                },
+                iconDisabledColor: Colors.white,
+                iconSize: 50,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+}
+
+class FavoritesController {
+  static final StreamController<bool> _controller = StreamController<bool>.broadcast();
+
+  static Stream<bool> get stream => _controller.stream;
+
+  static void notifyFavoritesChanged() {
+    _controller.add(true);
+  }
+}
+
+class AddShopButton extends StatefulWidget {
+  const AddShopButton({super.key});
+
+  @override
+  State<AddShopButton> createState() => _AddShopButtonState();
+}
+
+class _AddShopButtonState extends State<AddShopButton> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  bool isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    checkAdmin();
+  }
+
+  void checkAdmin() async {
+    var currentUser = _auth.currentUser?.uid;
+    var docRef = await firestore.collection("admins").where('userId', isEqualTo: currentUser).get();
+    if (docRef.docs.isNotEmpty) {
+      setState(() {
+        isAdmin = true;
+      });
+    } else {
+      setState(() {
+        isAdmin = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isAdmin) {
+      return ElevatedButton(
+          onPressed: () {
+
+          },
+          child: const Text("Add Shop"),
+      );
+    }
+    return const SizedBox();
   }
 }

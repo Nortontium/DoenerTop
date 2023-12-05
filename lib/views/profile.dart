@@ -15,24 +15,6 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  void _pushNavigation() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const Navigation(),
-      ),
-    );
-  }
-
-  void _pushProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const Profile(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
