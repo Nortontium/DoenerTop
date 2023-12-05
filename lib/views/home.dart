@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'add_shop.dart';
 import 'navigation.dart';
 
 class Home extends StatefulWidget {
@@ -121,8 +122,9 @@ class _HomeState extends State<Home> {
             const SizedBox(
               child: Browse(),
             ),
-            const SizedBox(
-              child: AddShopButton(),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: const AddShopButton(),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -217,9 +219,7 @@ class _FavouritesState extends State<Favourites> {
   void initState() {
     super.initState();
     FavoritesController.stream.listen((bool _) {
-      setState(() {
-
-      });
+      setState(() {});
     });
   }
 
@@ -231,10 +231,6 @@ class _FavouritesState extends State<Favourites> {
             .where('favorites', arrayContains: _auth.currentUser!.uid)
             .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return const Text('Something went wrong');
-          }
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Container(
               margin: const EdgeInsets.all(10),
@@ -249,43 +245,71 @@ class _FavouritesState extends State<Favourites> {
                 child: CircularProgressIndicator(),
               ),
             );
+          } else if (snapshot.connectionState == ConnectionState.active) {
+            if (snapshot.hasData) {
+              if (snapshot.data!.size == 0) {
+                //TODO: schönes ui
+                return Container(
+                  margin: const EdgeInsets.all(10),
+                  height: 200,
+                  width: MediaQuery.of(context).size.width * 0.80,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Click the heart icon to \nadd to favorites.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Roboto",
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return ListView.builder(
+                itemCount: snapshot.data!.size,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  QueryDocumentSnapshot<Object?> cardData =
+                      snapshot.data!.docs[index];
+                  return FavCard(cardData: cardData.data() as Map<String, dynamic>);
+                },
+              );
+            } else {
+              //TODO: schönes ui
+              return Container(
+                margin: const EdgeInsets.all(10),
+                height: 200,
+                width: MediaQuery.of(context).size.width * 0.80,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Click the heart icon to \nadd to favorites.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Roboto",
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              );
+            }
           }
-          if (snapshot.data!.size == 0) {   //TODO: schönes ui
-            return Container(
-              margin: const EdgeInsets.all(10),
-              height: 200,
-              width: MediaQuery.of(context).size.width * 0.80,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Text(
-                  'Click the heart icon to \nadd to favorites.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: "Roboto",
-                  fontSize: 18,
-                ),),
-              ),
-            );
-          }
-          return ListView.builder(
-            itemCount: snapshot.data!.size,
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (context, index) {
-              QueryDocumentSnapshot<Object?> cardData =
-                  snapshot.data!.docs[index];
-              return FavCard(cardData: cardData);
-            },
-          );
+          return const Text("Something went wrong.");
         });
   }
 }
 
 class FavCard extends StatefulWidget {
-  final QueryDocumentSnapshot<Object?> cardData;
+  final Map<String, dynamic> cardData;
 
   const FavCard({super.key, required this.cardData});
 
@@ -294,15 +318,29 @@ class FavCard extends StatefulWidget {
 }
 
 class _FavCardState extends State<FavCard> {
-  late Map<String, dynamic> data;
 
   @override
   void initState() {
-    data = widget.cardData.data() as Map<String, dynamic>;
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.cardData['image'] == null) {
+      return Container(
+        margin: const EdgeInsets.all(10),
+        height: 200,
+        width: MediaQuery.of(context).size.width * 0.80,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     return Container(
       margin: const EdgeInsets.all(10),
       height: 200,
@@ -316,7 +354,7 @@ class _FavCardState extends State<FavCard> {
         fit: StackFit.passthrough,
         children: [
           Image.asset(
-            data['image'],
+            widget.cardData['image'],
             fit: BoxFit.cover,
             width: MediaQuery.of(context).size.width * 0.80,
           ),
@@ -341,7 +379,7 @@ class _FavCardState extends State<FavCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['name'],
+                    widget.cardData['name'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -351,7 +389,7 @@ class _FavCardState extends State<FavCard> {
                     ),
                   ),
                   Text(
-                    data['address'],
+                    widget.cardData['address'],
                     overflow: TextOverflow.clip,
                     style: const TextStyle(
                       color: Colors.white,
@@ -387,8 +425,8 @@ class _ShopCardState extends State<ShopCard> {
   void initState() {
     data = widget.cardData.data() as Map<String, dynamic>;
     if (_auth.currentUser != null &&
-        data['favorites'].contains(_auth.currentUser?.uid)){
-        _fav = true;
+        data['favorites'].contains(_auth.currentUser?.uid)) {
+      _fav = true;
     } else {
       _fav = false;
     }
@@ -398,14 +436,18 @@ class _ShopCardState extends State<ShopCard> {
     final docRef = _firestore.collection("doenershops").doc(widget.cardData.id);
     if (isFavorite) {
       // Add current user's ID to the favorites array
-      docRef.set({'favorites': FieldValue.arrayUnion([_auth.currentUser?.uid])},
-          SetOptions(merge: true));
+      docRef.set({
+        'favorites': FieldValue.arrayUnion([_auth.currentUser?.uid])
+      }, SetOptions(merge: true));
     } else {
       // Remove current user's ID from the favorites array
-      docRef.update({'favorites': FieldValue.arrayRemove([_auth.currentUser?.uid])});
+      docRef.update({
+        'favorites': FieldValue.arrayRemove([_auth.currentUser?.uid])
+      });
     }
 
-    FavoritesController.notifyFavoritesChanged();   //for correct display in favorites widget
+    FavoritesController
+        .notifyFavoritesChanged(); //for correct display in favorites widget
 
     setState(() {
       _fav = isFavorite;
@@ -502,7 +544,8 @@ class _ShopCardState extends State<ShopCard> {
 }
 
 class FavoritesController {
-  static final StreamController<bool> _controller = StreamController<bool>.broadcast();
+  static final StreamController<bool> _controller =
+      StreamController<bool>.broadcast();
 
   static Stream<bool> get stream => _controller.stream;
 
@@ -530,27 +573,40 @@ class _AddShopButtonState extends State<AddShopButton> {
   }
 
   void checkAdmin() async {
-    var currentUser = _auth.currentUser?.uid;
-    var docRef = await firestore.collection("admins").where('userId', isEqualTo: currentUser).get();
-    if (docRef.docs.isNotEmpty) {
-      setState(() {
-        isAdmin = true;
-      });
-    } else {
-      setState(() {
-        isAdmin = false;
-      });
+    try {
+      var currentUser = _auth.currentUser?.uid;
+      var docRef = await firestore
+          .collection('admin')
+          .where('userId', isEqualTo: currentUser)
+          .get();
+      if (docRef.docs.isNotEmpty) {
+        setState(() {
+          isAdmin = true;
+        });
+      } else {
+        setState(() {
+          isAdmin = false;
+        });
+      }
+    } catch (e) {
+      print("Error getting admin id: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (isAdmin) {
-      return ElevatedButton(
-          onPressed: () {
-
-          },
-          child: const Text("Add Shop"),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const ShopCreate()));
+            },
+            child: const Text("Add Shop"),
+          ),
+        ],
       );
     }
     return const SizedBox();
