@@ -159,6 +159,14 @@ class _BrowseState extends State<Browse> {
       FirebaseFirestore.instance.collection('doenershops').snapshots();
 
   @override
+  void initState() {
+    super.initState();
+    BrowseController.stream.listen((bool _) {
+      setState(() {});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: _shopsStream,
@@ -220,7 +228,7 @@ class _FavouritesState extends State<Favourites> {
   @override
   void initState() {
     super.initState();
-    BrowseController.stream.listen((bool _) {
+    FavoritesController.stream.listen((bool _) {
       setState(() {});
     });
   }
@@ -456,7 +464,7 @@ class _ShopCardState extends State<ShopCard> {
           final progress = 100.0 *
               (taskSnapshot.bytesTransferred /
                   taskSnapshot.totalBytes);
-          print("Download is $progress% complete.");
+          //print("Download is $progress% complete.");
           break;
         case TaskState.paused:
           print("Download is paused.");

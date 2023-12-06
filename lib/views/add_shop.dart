@@ -45,15 +45,14 @@ class _ShopCreateState extends State<ShopCreate> {
             children: [
               Container(
                   clipBehavior: Clip.antiAlias,
-                  alignment: Alignment.center,
-                  width: double.infinity,
-                  height: 300,
+                  width: MediaQuery.of(context).size.width * 0.95,
+                  height: 200,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
+                    borderRadius: const BorderRadius.all(Radius.circular(16)),
                   ),
                   child: _image != null
-                      ? Image.file(_image!, fit: BoxFit.cover)
+                      ? Image.file(_image!, fit: BoxFit.cover, width: MediaQuery.of(context).size.width * 0.95)
                       : const Icon(
                           Icons.add,
                           size: 80,
@@ -104,7 +103,7 @@ class _ShopCreateState extends State<ShopCreate> {
                   }
 
                   var uploadTask = storageRef.putFile(_image!);
-
+                  //TODO: loading ui
                   uploadTask.snapshotEvents.listen((TaskSnapshot taskSnapshot) {
                     switch (taskSnapshot.state) {
                       case TaskState.running:
@@ -131,6 +130,7 @@ class _ShopCreateState extends State<ShopCreate> {
                           'favorites': [],
                           'image': "images/${name.replaceAll(" ", "_")}.jpg",
                         });
+
                         BrowseController.notifyBrowseChanged();
                         FavoritesController.notifyFavoritesChanged();
 
