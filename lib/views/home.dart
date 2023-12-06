@@ -1,12 +1,14 @@
 import 'dart:async';
-
+import 'dart:io';
 import 'package:doenertop/views/profile.dart';
 import 'package:doenertop/components/responsive_text.dart';
 import 'package:favorite_button/favorite_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:path_provider/path_provider.dart';
 import 'add_shop.dart';
 import 'navigation.dart';
 
@@ -218,7 +220,7 @@ class _FavouritesState extends State<Favourites> {
   @override
   void initState() {
     super.initState();
-    FavoritesController.stream.listen((bool _) {
+    BrowseController.stream.listen((bool _) {
       setState(() {});
     });
   }
@@ -318,15 +320,32 @@ class FavCard extends StatefulWidget {
 }
 
 class _FavCardState extends State<FavCard> {
+  final storageRef = FirebaseStorage.instance.ref();
+  File? _file;
+  bool loading = true;
+
+  Future<void> loadImage() async {
+
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
+    _file = File(filePath);
+
+    setState(() {
+      loading = false;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    if (widget.cardData['image'] != null) {
+      loadImage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.cardData['image'] == null) {
+    if (loading) {
       return Container(
         margin: const EdgeInsets.all(10),
         height: 200,
@@ -353,8 +372,8 @@ class _FavCardState extends State<FavCard> {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          Image.asset(
-            widget.cardData['image'],
+          Image.file(
+            _file!,
             fit: BoxFit.cover,
             width: MediaQuery.of(context).size.width * 0.80,
           ),
@@ -420,6 +439,42 @@ class _ShopCardState extends State<ShopCard> {
   final _auth = FirebaseAuth.instance;
   bool _fav = false;
   Map<String, dynamic> data = {};
+  final storageRef = FirebaseStorage.instance.ref();
+  File? _file;
+  bool loading = true;
+
+  Future<void> loadImage() async {
+
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
+    _file = File(filePath);
+
+    final downloadTask = storageRef.child(widget.cardData['image']).writeToFile(_file!);
+    downloadTask.snapshotEvents.listen((taskSnapshot) {
+      switch (taskSnapshot.state) {
+        case TaskState.running:
+          final progress = 100.0 *
+              (taskSnapshot.bytesTransferred /
+                  taskSnapshot.totalBytes);
+          print("Download is $progress% complete.");
+          break;
+        case TaskState.paused:
+          print("Download is paused.");
+          break;
+        case TaskState.canceled:
+          print("Download was canceled");
+          break;
+        case TaskState.error:
+          print("Download error");
+          break;
+        case TaskState.success:
+          setState(() {
+            loading = false;
+          });
+          break;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -430,6 +485,7 @@ class _ShopCardState extends State<ShopCard> {
     } else {
       _fav = false;
     }
+    loadImage();
   }
 
   void setFavorite(bool isFavorite) async {
@@ -446,8 +502,7 @@ class _ShopCardState extends State<ShopCard> {
       });
     }
 
-    FavoritesController
-        .notifyFavoritesChanged(); //for correct display in favorites widget
+    FavoritesController.notifyFavoritesChanged();
 
     setState(() {
       _fav = isFavorite;
@@ -456,8 +511,20 @@ class _ShopCardState extends State<ShopCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return const Text("Loading..."); //TODO: ui
+    if (loading) {
+      return Container(
+        margin: const EdgeInsets.all(10),
+        height: 200,
+        width: MediaQuery.of(context).size.width * 0.95,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
     return Container(
       margin: const EdgeInsets.all(10),
@@ -471,8 +538,8 @@ class _ShopCardState extends State<ShopCard> {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          Image.asset(
-            data['image'],
+          Image.file(
+            _file!,
             fit: BoxFit.cover,
             width: MediaQuery.of(context).size.width * 0.95,
           ),
@@ -550,6 +617,17 @@ class FavoritesController {
   static Stream<bool> get stream => _controller.stream;
 
   static void notifyFavoritesChanged() {
+    _controller.add(true);
+  }
+}
+
+class BrowseController {
+  static final StreamController<bool> _controller =
+  StreamController<bool>.broadcast();
+
+  static Stream<bool> get stream => _controller.stream;
+
+  static void notifyBrowseChanged() {
     _controller.add(true);
   }
 }

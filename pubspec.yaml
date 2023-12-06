@@ -41,6 +41,8 @@ dependencies:
   cloud_firestore: ^4.13.0
   favorite_button: ^0.0.4
   firebase_storage: ^11.5.3
+  image_picker: ^1.0.4
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:
