@@ -19,8 +19,7 @@ class _LoginState extends State<Login> {
   bool isLoading = false;
 
   @override
-  void initState() {
-  }
+  void initState() {}
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +97,8 @@ class _LoginState extends State<Login> {
                     FirebaseAuth.instance
                         .authStateChanges()
                         .listen((User? user) {
-                      if (user != null) { //zu user homepage weiterleiten
+                      if (user != null) {
+                        //zu user homepage weiterleiten
                         setState(() {
                           isLoading = false;
                         });
@@ -110,7 +110,8 @@ class _LoginState extends State<Login> {
                           ),
                         );
                       }
-                      if (user == null) { //kein user angemeldet
+                      if (user == null) {
+                        //kein user angemeldet
                         setState(() {
                           isLoading = false;
                         });

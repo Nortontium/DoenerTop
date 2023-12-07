@@ -167,19 +167,16 @@ class _BrowseState extends State<Browse> {
       FirebaseFirestore.instance.collection('doenershops').snapshots();
   bool rebuilt = false;
 
-  void listenToDoenershops()  async {
+  void listenToDoenershops() async {
     _shopsStream.listen((QuerySnapshot<Object?> snapshot) {
       for (var change in snapshot.docChanges) {
         // Handle the changes (added, modified, removed documents)
         if (change.type == DocumentChangeType.added) {
-          setState(() {
-          });
+          setState(() {});
         } else if (change.type == DocumentChangeType.modified) {
-          setState(() {
-          });
+          setState(() {});
         } else if (change.type == DocumentChangeType.removed) {
-          setState(() {
-          });
+          setState(() {});
         }
       }
     });
@@ -192,8 +189,7 @@ class _BrowseState extends State<Browse> {
       setState(() {});
     });
     listenToDoenershops();
-    setState(() {
-    });
+    setState(() {});
   }
 
   @override
@@ -316,7 +312,9 @@ class _FavouritesState extends State<Favourites> {
                 itemBuilder: (context, index) {
                   QueryDocumentSnapshot<Object?> cardData =
                       snapshot.data!.docs[index];
-                  return FavCard(key: ValueKey(cardData.id), cardData: cardData.data() as Map<String, dynamic>);
+                  return FavCard(
+                      key: ValueKey(cardData.id),
+                      cardData: cardData.data() as Map<String, dynamic>);
                 },
               );
             } else {
@@ -363,18 +361,17 @@ class _FavCardState extends State<FavCard> {
   bool loading = true;
 
   Future<void> loadImage() async {
-
     final appDocDir = await getApplicationDocumentsDirectory();
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
     _file = File(filePath);
 
-    final downloadTask = storageRef.child(widget.cardData['image']).writeToFile(_file!);
+    final downloadTask =
+        storageRef.child(widget.cardData['image']).writeToFile(_file!);
     downloadTask.snapshotEvents.listen((taskSnapshot) {
       switch (taskSnapshot.state) {
         case TaskState.running:
-          final progress = 100.0 *
-              (taskSnapshot.bytesTransferred /
-                  taskSnapshot.totalBytes);
+          final progress =
+              100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
           //print("Download is $progress% complete.");
           break;
         case TaskState.paused:
@@ -512,11 +509,10 @@ class _ShopCardState extends State<ShopCard> {
   bool loading = true;
 
   Future<void> loadImage() async {
-
     if (widget.cardData['image'] == null) {
       FavoritesController.notifyFavoritesChanged();
       setState(() {
-
+        loading = true;
       });
     }
 
@@ -524,13 +520,13 @@ class _ShopCardState extends State<ShopCard> {
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
     _file = File(filePath);
 
-    final downloadTask = storageRef.child(widget.cardData['image']).writeToFile(_file!);
+    final downloadTask =
+        storageRef.child(widget.cardData['image']).writeToFile(_file!);
     downloadTask.snapshotEvents.listen((taskSnapshot) {
       switch (taskSnapshot.state) {
         case TaskState.running:
-          final progress = 100.0 *
-              (taskSnapshot.bytesTransferred /
-                  taskSnapshot.totalBytes);
+          final progress =
+              100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
           //print("Download is $progress% complete.");
           break;
         case TaskState.paused:
@@ -698,7 +694,7 @@ class FavoritesController {
 
 class BrowseController {
   static final StreamController<bool> _controller =
-  StreamController<bool>.broadcast();
+      StreamController<bool>.broadcast();
 
   static Stream<bool> get stream => _controller.stream;
 
