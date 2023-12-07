@@ -42,6 +42,14 @@ class _HomeState extends State<Home> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    BrowseController.stream.listen((bool _) {
+      setState(() {});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     uid = _auth.currentUser!.uid;
     return Scaffold(
@@ -157,12 +165,34 @@ class Browse extends StatefulWidget {
 class _BrowseState extends State<Browse> {
   final Stream<QuerySnapshot> _shopsStream =
       FirebaseFirestore.instance.collection('doenershops').snapshots();
+  bool rebuilt = false;
+
+  void listenToDoenershops()  async {
+    _shopsStream.listen((QuerySnapshot<Object?> snapshot) {
+      for (var change in snapshot.docChanges) {
+        // Handle the changes (added, modified, removed documents)
+        if (change.type == DocumentChangeType.added) {
+          setState(() {
+          });
+        } else if (change.type == DocumentChangeType.modified) {
+          setState(() {
+          });
+        } else if (change.type == DocumentChangeType.removed) {
+          setState(() {
+          });
+        }
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     BrowseController.stream.listen((bool _) {
       setState(() {});
+    });
+    listenToDoenershops();
+    setState(() {
     });
   }
 
@@ -206,7 +236,7 @@ class _BrowseState extends State<Browse> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: snapshot.data!.docs
               .map((DocumentSnapshot document) {
-                return ShopCard(cardData: document);
+                return ShopCard(key: ValueKey(document.id), cardData: document);
               })
               .toList()
               .cast(),
@@ -286,7 +316,7 @@ class _FavouritesState extends State<Favourites> {
                 itemBuilder: (context, index) {
                   QueryDocumentSnapshot<Object?> cardData =
                       snapshot.data!.docs[index];
-                  return FavCard(cardData: cardData.data() as Map<String, dynamic>);
+                  return FavCard(key: ValueKey(cardData.id), cardData: cardData.data() as Map<String, dynamic>);
                 },
               );
             } else {
@@ -338,6 +368,36 @@ class _FavCardState extends State<FavCard> {
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
     _file = File(filePath);
 
+    final downloadTask = storageRef.child(widget.cardData['image']).writeToFile(_file!);
+    downloadTask.snapshotEvents.listen((taskSnapshot) {
+      switch (taskSnapshot.state) {
+        case TaskState.running:
+          final progress = 100.0 *
+              (taskSnapshot.bytesTransferred /
+                  taskSnapshot.totalBytes);
+          //print("Download is $progress% complete.");
+          break;
+        case TaskState.paused:
+          print("Download is paused.");
+          break;
+        case TaskState.canceled:
+          print("Download was canceled");
+          break;
+        case TaskState.error:
+          print("Download error");
+          break;
+        case TaskState.success:
+          setState(() {
+            loading = false;
+          });
+          break;
+      }
+
+      setState(() {
+        loading = false;
+      });
+    });
+
     setState(() {
       loading = false;
     });
@@ -345,10 +405,10 @@ class _FavCardState extends State<FavCard> {
 
   @override
   void initState() {
+    loading = true;
     super.initState();
-    if (widget.cardData['image'] != null) {
-      loadImage();
-    }
+
+    loadImage();
   }
 
   @override
@@ -452,6 +512,13 @@ class _ShopCardState extends State<ShopCard> {
   bool loading = true;
 
   Future<void> loadImage() async {
+
+    if (widget.cardData['image'] == null) {
+      FavoritesController.notifyFavoritesChanged();
+      setState(() {
+
+      });
+    }
 
     final appDocDir = await getApplicationDocumentsDirectory();
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
