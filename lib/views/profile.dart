@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/responsive_text.dart';
 import 'home.dart';
-import 'navigation.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -21,13 +20,7 @@ class _ProfileState extends State<Profile> {
       appBar: AppBar(
         leading: BackButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const Home(),
-                fullscreenDialog: true,
-              ),
-            );
+            Navigator.pop(context);
           },
         ),
         title: ResponsiveText(

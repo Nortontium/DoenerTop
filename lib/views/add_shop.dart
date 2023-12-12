@@ -42,7 +42,7 @@ class _ShopCreateState extends State<ShopCreate> {
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.height,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 0),
           child: SingleChildScrollView(
             child: Container(
               height: MediaQuery.of(context).size.height,

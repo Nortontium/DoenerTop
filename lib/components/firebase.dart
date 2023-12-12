@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:doenertop/components/responsive_text.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import '../views/home.dart';
 import '../views/login.dart';
@@ -70,13 +70,9 @@ class GetUserInfo extends StatelessWidget {
         }
 
         return Center(
-          child: ResponsiveText(
-            text: "loading...",
-            style: const TextStyle(
-              fontFamily: "DelaGothicOne",
-              color: Colors.black,
-              fontSize: 20,
-            ),
+          child: LoadingAnimationWidget.waveDots(
+            color: Colors.black,
+            size: 50,
           ),
         );
       },
@@ -113,13 +109,9 @@ class CheckLogin extends StatelessWidget {
     });
     return Scaffold(
       body: Center(
-        child: ResponsiveText(
-          text: "loading...",
-          style: const TextStyle(
-            fontFamily: "DelaGothicOne",
-            color: Colors.black,
-            fontSize: 20,
-          ),
+        child: LoadingAnimationWidget.waveDots(
+          color: Colors.black,
+          size: 50,
         ),
       ),
     );

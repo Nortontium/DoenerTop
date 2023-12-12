@@ -3,6 +3,7 @@ import 'package:doenertop/views/sign_up.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:doenertop/views/home.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -26,13 +27,9 @@ class _LoginState extends State<Login> {
     if (isLoading) {
       return Scaffold(
         body: Center(
-          child: ResponsiveText(
-            text: "loading...",
-            style: const TextStyle(
-              fontFamily: "DelaGothicOne",
-              color: Colors.black,
-              fontSize: 20,
-            ),
+          child: LoadingAnimationWidget.waveDots(
+            color: Colors.black,
+            size: 50,
           ),
         ),
       );
@@ -93,6 +90,7 @@ class _LoginState extends State<Login> {
                       email: email,
                       password: password,
                     );
+                    //TODO: ui eingabefehler etc.
                     if (!context.mounted) return;
                     FirebaseAuth.instance
                         .authStateChanges()

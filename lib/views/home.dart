@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'package:doenertop/views/profile.dart';
 import 'package:doenertop/components/responsive_text.dart';
+import 'package:doenertop/views/shop.dart';
 import 'package:favorite_button/favorite_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'add_shop.dart';
 import 'navigation.dart';
@@ -41,12 +43,23 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Future<void> _pullRefresh() async {
+    /*
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const Home(),
+          fullscreenDialog: true,
+        ));
+     */
+    BrowseController.notifyBrowseChanged();
+    FavoritesController.notifyFavoritesChanged();
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
-    BrowseController.stream.listen((bool _) {
-      setState(() {});
-    });
   }
 
   @override
@@ -94,63 +107,67 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: ListView(children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(
-              height: 30,
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                "Favorites",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
+      body: RefreshIndicator(
+        semanticsLabel: "loading",
+        onRefresh: _pullRefresh,
+        child: ListView(children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(
+                height: 30,
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  "Favorites",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(
-              height: 250,
-              child: Favourites(),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                "Browse",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
+              const SizedBox(
+                height: 250,
+                child: Favourites(),
+              ),
+              const SizedBox(
+                height: 30,
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  "Browse",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(
-              child: Browse(),
-            ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: const AddShopButton(),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: ResponsiveText(
-                textAlign: TextAlign.center,
-                text: "Made with ♥ by Carl Czarnetzki",
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 10,
+              const SizedBox(
+                child: Browse(),
+              ),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: const AddShopButton(),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: ResponsiveText(
+                  textAlign: TextAlign.center,
+                  text: "Made with ♥ by Carl Czarnetzki",
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 10,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ]),
+            ],
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -163,12 +180,11 @@ class Browse extends StatefulWidget {
 }
 
 class _BrowseState extends State<Browse> {
-  final Stream<QuerySnapshot> _shopsStream =
-      FirebaseFirestore.instance.collection('doenershops').snapshots();
-  bool rebuilt = false;
+  final _shopsRef =
+      FirebaseFirestore.instance.collection('doenershops');
 
   void listenToDoenershops() async {
-    _shopsStream.listen((QuerySnapshot<Object?> snapshot) {
+    _shopsRef.snapshots().listen((QuerySnapshot<Object?> snapshot) {
       for (var change in snapshot.docChanges) {
         // Handle the changes (added, modified, removed documents)
         if (change.type == DocumentChangeType.added) {
@@ -186,16 +202,16 @@ class _BrowseState extends State<Browse> {
   void initState() {
     super.initState();
     BrowseController.stream.listen((bool _) {
-      setState(() {});
+      if (context.mounted) {
+        setState(() {});
+      }
     });
-    listenToDoenershops();
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _shopsStream,
+      stream: _shopsRef.snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (snapshot.hasError) {
           return const Text('Something went wrong');
@@ -255,7 +271,9 @@ class _FavouritesState extends State<Favourites> {
   void initState() {
     super.initState();
     FavoritesController.stream.listen((bool _) {
-      setState(() {});
+      if (context.mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -277,8 +295,11 @@ class _FavouritesState extends State<Favourites> {
                 color: Colors.grey.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(),
+              child: Center(
+                child: LoadingAnimationWidget.twoRotatingArc(
+                  color: Colors.grey,
+                  size: 50,
+                ),
               ),
             );
           } else if (snapshot.connectionState == ConnectionState.active) {
@@ -359,44 +380,55 @@ class _FavCardState extends State<FavCard> {
   final storageRef = FirebaseStorage.instance.ref();
   File? _file;
   bool loading = true;
+  StreamSubscription<TaskSnapshot>? streamSubscription;
 
   Future<void> loadImage() async {
+    if (widget.cardData['image'] == null) {
+      FavoritesController.notifyFavoritesChanged();
+      setState(() {
+        loading = true;
+      });
+    }
     final appDocDir = await getApplicationDocumentsDirectory();
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
-    _file = File(filePath);
+_file = File(filePath);
 
-    final downloadTask =
-        storageRef.child(widget.cardData['image']).writeToFile(_file!);
-    downloadTask.snapshotEvents.listen((taskSnapshot) {
-      switch (taskSnapshot.state) {
-        case TaskState.running:
-          final progress =
-              100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
-          //print("Download is $progress% complete.");
-          break;
-        case TaskState.paused:
-          print("Download is paused.");
-          break;
-        case TaskState.canceled:
-          print("Download was canceled");
-          break;
-        case TaskState.error:
-          print("Download error");
-          break;
-        case TaskState.success:
-          setState(() {
-            loading = false;
-          });
-          break;
-      }
-
-      setState(() {
-        loading = false;
+    await Future.delayed(const Duration(milliseconds: 500), () {
+      final downloadTask =
+      storageRef.child(widget.cardData['image']).writeToFile(_file!);
+      streamSubscription = downloadTask.snapshotEvents.listen((taskSnapshot) {
+        switch (taskSnapshot.state) {
+          case TaskState.running:
+            final progress =
+                100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
+            //print("Download is $progress% complete.");
+            break;
+          case TaskState.paused:
+            print("Download is paused.");
+            break;
+          case TaskState.canceled:
+            print("Download was canceled");
+            setState(() {
+              _file = File("sampleImage"); //TODO: add sample image
+              loading = false;
+            });
+            break;
+          case TaskState.error:
+            print("Favorites Download error");
+            setState(() {
+              _file = File("sampleImage"); //TODO: add sample image
+              loading = false;
+            });
+            break;
+          case TaskState.success:
+            if (mounted) {
+              setState(() {
+                loading = false;
+              });
+            }
+            break;
+        }
       });
-    });
-
-    setState(() {
-      loading = false;
     });
   }
 
@@ -404,8 +436,15 @@ class _FavCardState extends State<FavCard> {
   void initState() {
     loading = true;
     super.initState();
-
     loadImage();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (streamSubscription != null) {
+      streamSubscription!.cancel();
+    }
   }
 
   @override
@@ -420,72 +459,85 @@ class _FavCardState extends State<FavCard> {
           color: Colors.grey.withOpacity(0.4),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
+        child: Center(
+          child: LoadingAnimationWidget.twoRotatingArc(
+              color: Colors.grey,
+              size: 50,
+          ),
         ),
       );
     }
-    return Container(
-      margin: const EdgeInsets.all(10),
-      height: 200,
-      width: MediaQuery.of(context).size.width * 0.80,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          Image.file(
-            _file!,
-            fit: BoxFit.cover,
-            width: MediaQuery.of(context).size.width * 0.80,
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              height: 150,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => Shop(
+                      data: widget.cardData,
+                    )));
+      },
+      child: Container(
+        margin: const EdgeInsets.all(10),
+        height: 200,
+        width: MediaQuery.of(context).size.width * 0.80,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            Image.file(
+              _file!,
+              fit: BoxFit.cover,
               width: MediaQuery.of(context).size.width * 0.80,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.grey[800]!.withOpacity(0.9),
-                    Colors.transparent,
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 150,
+                width: MediaQuery.of(context).size.width * 0.80,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.grey[800]!.withOpacity(0.9),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.cardData['name'],
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontFamily: "Roboto",
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      widget.cardData['address'],
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontFamily: "Roboto",
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.cardData['name'],
-                    overflow: TextOverflow.clip,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontFamily: "Roboto",
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    widget.cardData['address'],
-                    overflow: TextOverflow.clip,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: "Roboto",
-                    ),
-                  ),
-                ],
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -507,43 +559,58 @@ class _ShopCardState extends State<ShopCard> {
   final storageRef = FirebaseStorage.instance.ref();
   File? _file;
   bool loading = true;
+  late StreamSubscription<TaskSnapshot>? streamSubscription;
 
   Future<void> loadImage() async {
     if (widget.cardData['image'] == null) {
-      FavoritesController.notifyFavoritesChanged();
-      setState(() {
-        loading = true;
-      });
+      BrowseController.notifyBrowseChanged();
+      if (context.mounted) {
+        setState(() {
+          loading = true;
+        });
+      }
     }
 
     final appDocDir = await getApplicationDocumentsDirectory();
     final filePath = "${appDocDir.absolute.path}/${widget.cardData['image']}";
     _file = File(filePath);
 
-    final downloadTask =
-        storageRef.child(widget.cardData['image']).writeToFile(_file!);
-    downloadTask.snapshotEvents.listen((taskSnapshot) {
-      switch (taskSnapshot.state) {
-        case TaskState.running:
-          final progress =
-              100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
-          //print("Download is $progress% complete.");
-          break;
-        case TaskState.paused:
-          print("Download is paused.");
-          break;
-        case TaskState.canceled:
-          print("Download was canceled");
-          break;
-        case TaskState.error:
-          print("Download error");
-          break;
-        case TaskState.success:
-          setState(() {
-            loading = false;
-          });
-          break;
-      }
+    await Future.delayed(const Duration(milliseconds: 500), () {
+      final downloadTask =
+      storageRef.child(widget.cardData['image']).writeToFile(_file!);
+      streamSubscription = downloadTask.snapshotEvents.listen((taskSnapshot) {
+        switch (taskSnapshot.state) {
+          case TaskState.running:
+            final progress =
+                100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
+            //print("Download is $progress% complete.");
+            break;
+          case TaskState.paused:
+            print("Download is paused.");
+            break;
+          case TaskState.canceled:
+            print("Download was canceled");
+            setState(() {
+              _file = null;
+              loading = false;
+            });
+            break;
+          case TaskState.error:
+            print("Browse Download error");
+            setState(() {
+              _file = File("sampleImage"); //TODO: add sample image
+              loading = false;
+            });
+            break;
+          case TaskState.success:
+            if(context.mounted) {
+              setState(() {
+                loading = false;
+              });
+            }
+            break;
+        }
+      });
     });
   }
 
@@ -557,6 +624,14 @@ class _ShopCardState extends State<ShopCard> {
       _fav = false;
     }
     loadImage();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (streamSubscription != null) {
+      streamSubscription!.cancel();
+    }
   }
 
   void setFavorite(bool isFavorite) async {
@@ -592,90 +667,104 @@ class _ShopCardState extends State<ShopCard> {
           color: Colors.grey.withOpacity(0.4),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
+        child: Center(
+          child: LoadingAnimationWidget.twoRotatingArc(
+            color: Colors.grey,
+            size: 50,
+          ),
         ),
       );
     }
-    return Container(
-      margin: const EdgeInsets.all(10),
-      height: 200,
-      width: MediaQuery.of(context).size.width * 0.95,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          Image.file(
-            _file!,
-            fit: BoxFit.cover,
-            width: MediaQuery.of(context).size.width * 0.95,
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              height: 150,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => Shop(
+                      data: data,
+                    )));
+      },
+      child: Container(
+        margin: const EdgeInsets.all(10),
+        height: 200,
+        width: MediaQuery.of(context).size.width * 0.95,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            Image.file(
+              _file!,
+              fit: BoxFit.cover,
               width: MediaQuery.of(context).size.width * 0.95,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.grey[800]!.withOpacity(0.9),
-                    Colors.transparent,
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 150,
+                width: MediaQuery.of(context).size.width * 0.95,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.topCenter,
+                    colors: [
+                      //Colors.white.withOpacity(0.9),
+                      Colors.grey[800]!.withOpacity(0.9),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data['name'],
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontFamily: "Roboto",
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      data['address'],
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontFamily: "Roboto",
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['name'],
-                    overflow: TextOverflow.clip,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontFamily: "Roboto",
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    data['address'],
-                    overflow: TextOverflow.clip,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: "Roboto",
-                    ),
-                  ),
-                ],
+            ),
+            Container(
+              margin: const EdgeInsets.all(10),
+              height: 150,
+              width: MediaQuery.of(context).size.width * 0.95,
+              child: Align(
+                alignment: Alignment.topRight,
+                child: FavoriteButton(
+                  isFavorite: _fav,
+                  valueChanged: (isFavorite) {
+                    setState(() {
+                      setFavorite(isFavorite);
+                    });
+                  },
+                  iconDisabledColor: Colors.white,
+                  iconSize: 50,
+                ),
               ),
             ),
-          ),
-          Container(
-            margin: const EdgeInsets.all(10),
-            height: 150,
-            width: MediaQuery.of(context).size.width * 0.95,
-            child: Align(
-              alignment: Alignment.topRight,
-              child: FavoriteButton(
-                isFavorite: _fav,
-                valueChanged: (isFavorite) {
-                  setState(() {
-                    setFavorite(isFavorite);
-                  });
-                },
-                iconDisabledColor: Colors.white,
-                iconSize: 50,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
